@@ -63,11 +63,21 @@ def register(request):
     else:
         return render(request, "auctions/register.html")
 
-# Forms
+def create(request):
+    if request.method == 'post':
+        pass
+    else:
+        form = createlisting()
+        return render(request, "auctions/create.html", {'form': form})
+
+
+
+
+# Form classes
 
 class createlisting(forms.Form):
-    listingname = forms.CharField(label='listingname', max_length='50')
-    initialvalue = forms.DecimalField(decimal_places=2, max_digits=9)
+    listingname = forms.CharField(label='listing name', max_length='50')
+    initialvalue = forms.DecimalField(label='initial price', decimal_places=2, max_digits=9)
     enddate = forms.DateTimeField
 
 class bid(forms.Form):
