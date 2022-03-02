@@ -7,14 +7,21 @@ class User(AbstractUser):
     pass
 
 class listing(models.Model):
-    userid = models.IntegerField()
+    ownerid = models.IntegerField()
     listingname = models.CharField(max_length=64)
     value = models.DecimalField(decimal_places=2)
     enddate = models.DateTimeField
 
 class bids(models.Model):
-    pass
+    listingid = models.IntegerField()
+    userid = models.IntegerField()
+    value = models.DecimalField(decimal_places=2)
+    date = models.DateTimeField
+
 
 class comments(models.Model):
-    pass
+    listingid = models.IntegerField()
+    userid = models.IntegerField()
+    date = models.DateTimeField
+    comment = models.CharField(max_length=200)
 
