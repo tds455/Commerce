@@ -3,6 +3,7 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django import forms
 
 from .models import User
 
@@ -61,3 +62,16 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "auctions/register.html")
+
+# Forms
+
+class createlisting(forms.Form):
+    listingname = forms.CharField(label='listingname', max_length='50')
+    initialvalue = forms.DecimalField(decimal_places=2, max_digits=9)
+    enddate = forms.DateTimeField
+
+class bid(forms.Form):
+    bidvalue = forms.DecimalField(decimal_places=2, max_digits=9)
+
+class comment(forms.Form):
+    comment = forms.CharField(max_length=200)
