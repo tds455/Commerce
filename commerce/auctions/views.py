@@ -97,7 +97,7 @@ def create(request):
 
 class listingform(forms.Form):
     listingname = forms.CharField(label='listing name', max_length='50', widget=forms.Textarea(attrs={'class':'form-control textbox', 'rows':1}))
-    initialvalue = forms.DecimalField(label='initial price', decimal_places=2, max_digits=9, widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}))
+    initialvalue = forms.DecimalField(label='initial price', decimal_places=2, max_digits=4000000, widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}))
     description = forms.CharField(max_length=200, widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}))
     imageurl = forms.URLField(widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}), required=False)
 
