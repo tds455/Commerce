@@ -2,6 +2,24 @@
 
 {% block body %}
     <h2>Active Listings</h2>
-
-    TODO
+    <table class="table">
+        <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Name</th>
+              <th scope="col">Current bid</th>
+              <th scope="col">Description</th>
+              <th scope="col">Photo</th>
+            </tr>
+          </thead>
+    {% for listing in listings %}
+    <tr>
+    <th scope="row">{{listing.id}}</th>
+    <td>{{listing.listingname}}</td>
+    <td>${{listing.initialvalue}}</td>
+    <td>{{listing.description}}</td>
+    <td><img src="{{listing.imgurl}}" width="80" height="80"></td>
+    </tr>
+    {% endfor %}
+    </table>
 {% endblock %}

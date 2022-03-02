@@ -5,11 +5,12 @@ from django.shortcuts import render
 from django.urls import reverse
 from django import forms
 
-from .models import User
+from .models import User, listing, bids, comments
 
 
 def index(request):
-    return render(request, "auctions/index.html")
+    activelistings = listing.objects.all()
+    return render(request, "auctions/index.html", {'listings': activelistings})
 
 
 def login_view(request):
@@ -64,10 +65,29 @@ def register(request):
         return render(request, "auctions/register.html")
 
 def create(request):
-    if request.method == 'post':
-        pass
+    if not request.user.is_authenticated:
+        return render(request, "auctions/login.html")
+    if request.method == 'POST':
+        # Retrieve inputs from form data
+        name = request.POST["listingname"]
+        value = request.POST["initialvalue"]
+        desc = request.POST["description"]
+        if not request.POST["imageurl"]:
+            img = "/static/auctions/noimg.png"
+        else:
+            img = request.POST["imageurl"]
+
+        # Retrieve user's current ID
+        user = request.user
+        id = user.id
+        print(id)
+        
+        # Commit values to database
+        dbcommit = listing(listingname=name, initialvalue = value, description = desc, imgurl = img, ownerid = id)
+        dbcommit.save()
+        return render(request, "auctions/index.html")
     else:
-        form = createlisting()
+        form = listingform()
         return render(request, "auctions/create.html", {'form': form})
 
 
@@ -75,13 +95,14 @@ def create(request):
 
 # Form classes
 
-class createlisting(forms.Form):
-    listingname = forms.CharField(label='listing name', max_length='50')
-    initialvalue = forms.DecimalField(label='initial price', decimal_places=2, max_digits=9)
-    enddate = forms.DateTimeField
+class listingform(forms.Form):
+    listingname = forms.CharField(label='listing name', max_length='50', widget=forms.Textarea(attrs={'class':'form-control textbox', 'rows':1}))
+    initialvalue = forms.DecimalField(label='initial price', decimal_places=2, max_digits=9, widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}))
+    description = forms.CharField(max_length=200, widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}))
+    imageurl = forms.URLField(widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}), required=False)
 
-class bid(forms.Form):
+class bidform(forms.Form):
     bidvalue = forms.DecimalField(decimal_places=2, max_digits=9)
 
-class comment(forms.Form):
+class commentform(forms.Form):
     comment = forms.CharField(max_length=200)
