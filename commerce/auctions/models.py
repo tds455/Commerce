@@ -9,13 +9,13 @@ class User(AbstractUser):
 class listing(models.Model):
     ownerid = models.IntegerField()
     listingname = models.CharField(max_length=64)
-    value = models.DecimalField(decimal_places=2)
+    initialvalue = models.DecimalField(decimal_places=2, max_digits=9)
     enddate = models.DateTimeField
 
 class bids(models.Model):
     listingid = models.IntegerField()
     userid = models.IntegerField()
-    value = models.DecimalField(decimal_places=2)
+    value = models.DecimalField(decimal_places=2, max_digits=9)
     date = models.DateTimeField
 
 
