@@ -86,9 +86,10 @@ def create(request):
         print(id)
         
         # Commit values to database
-        dbcommit = listing(listingname=name, initialvalue = value, description = desc, imgurl = img, ownerid = id)
+        dbcommit = listing(listingname=name, initialvalue = value, description = desc, imgurl = img, ownerid = id, active = "True")
         dbcommit.save()
-        return render(request, "auctions/index.html")
+        activelistings = listing.objects.all()
+        return render(request, "auctions/index.html", {'listings': activelistings})
     else:
         form = listingform()
         return render(request, "auctions/create.html", {'form': form})
@@ -100,10 +101,19 @@ def display(request, id):
     form = bidform()
     # Query listing creator's username
     owner = User.objects.filter(id=item[0].ownerid)
-    
-    # Check if listing is on watchlist
+    # Check if the owner is also the currently logged in user
     user = request.user
     userid = user.id
+    # Check if listing is currently active, if so display option to close listing
+    if item[0].active == False:
+        archive = ""
+        pass
+    else:
+        if userid == item[0].ownerid:
+            archive = "Click here to close listing"
+        else:
+            archive = ""
+    # Check if listing is on watchlist and change text appropiately 
     try:
         query=watchlist.objects.get(listingid = id, userid = userid)
         if query.active == True:
@@ -111,19 +121,37 @@ def display(request, id):
         else:
             watch = "Add to watchlist" 
     except:
-        pass
+        watch = "Add to watchlist"
 
+    # If bid is submitted, validate response and update bid value.
     if request.method == "POST":
-        form = listingform()
-        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch})
+        newbid = float(request.POST["bidvalue"])
+        # Retrieve current bid value
+        bidquery = listing.objects.get(id=id)
+        currentbid = float(bidquery.initialvalue)
+        # If newbid is higher than current bid, update value
+        if newbid > currentbid:
+            bidquery.initialvalue = request.POST["bidvalue"]
+            bidquery.save()
+        # Otherwise, return an error
+        else:     
+            form = bidform()
+            return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'error': "Error: Please enter a bid greater than the current value", 'archive': archive})
+
+        
+        # Retrieve updated info for listing
+        item = listing.objects.filter(id=id)      
+        form = bidform()
+        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'archive': archive})
 
     else:
         # Query table using listing ID
         item = listing.objects.filter(id=id)
         # Create bid form
         form = bidform()
-        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch})
+        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'archive': archive})
 
+@login_required(login_url='login')
 def watch(request):
     # Take the Listing ID that watchlist was visited from
     # https://stackoverflow.com/questions/27325505/django-getting-previous-url
@@ -136,6 +164,8 @@ def watch(request):
     user = request.user
     userid = user.id
     # Check if User has a watchlist entry, if not create it.
+    # If the user has a watchlist entry for this listing, toggle the boolean value
+    # Then return user to previous page
     try:
         query=watchlist.objects.get(listingid = listingid, userid = userid)
         if query.active == True:
@@ -151,7 +181,32 @@ def watch(request):
         entry.save()
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-         
+@login_required(login_url='login')
+def close(request):
+    # Take the Listing ID that watchlist was visited from
+    # https://stackoverflow.com/questions/27325505/django-getting-previous-url
+    page = str(request.META.get('HTTP_REFERER'))
+    # Split string to access only the ID
+    # https://www.kite.com/python/answers/how-to-remove-all-non-numeric-characters-from-a-string-in-python
+    listingid = page.rsplit("/", 1)[1]
+
+    # Get current user ID 
+    user = request.user
+    userid = user.id
+
+    # Query the current listing
+    query = listing.objects.get(id = listingid, ownerid = userid)
+
+    # Change the current query to closed
+    query.active = "False"
+    query.save()
+
+    # Redirect to previous page 
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+
+
+
     
 
 # Form classes

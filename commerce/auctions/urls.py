@@ -12,5 +12,7 @@ urlpatterns = [
     # Path for viewing individual listings
     path("<int:id>", views.display, name="display"),
     # Path for adding / removing to watchlist
-    path("watch", views.watch, name="watch")
+    path("watch", views.watch, name="watch"),
+    # Path for closing current listing
+    path("close", views.close, name="close")
 ]

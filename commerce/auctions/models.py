@@ -12,6 +12,7 @@ class listing(models.Model):
     initialvalue = models.DecimalField(decimal_places=2, max_digits=4000000)
     description = models.CharField(max_length=200)
     imgurl = models.URLField()
+    active = models.BooleanField()
 
 class bids(models.Model):
     listingid = models.IntegerField()
