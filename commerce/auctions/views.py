@@ -4,6 +4,9 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django import forms
+from django.conf import settings
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
 
 from .models import User, listing, bids, comments
 
@@ -64,9 +67,8 @@ def register(request):
     else:
         return render(request, "auctions/register.html")
 
-def create(request):
-    if not request.user.is_authenticated:
-        return render(request, "auctions/login.html")
+@login_required(login_url='login')
+def create(request): 
     if request.method == 'POST':
         # Retrieve inputs from form data
         name = request.POST["listingname"]
