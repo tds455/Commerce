@@ -1,4 +1,4 @@
-import http, re
+import http, re, datetime
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
@@ -13,7 +13,7 @@ from .models import User, listing, bids, comments, watchlist
 
 
 def index(request):
-    activelistings = listing.objects.all()
+    activelistings = listing.objects.filter(active="True")
     return render(request, "auctions/index.html", {'listings': activelistings})
 
 
@@ -95,25 +95,42 @@ def create(request):
         return render(request, "auctions/create.html", {'form': form})
 
 def display(request, id):
+
     # Query table using listing ID
     item = listing.objects.filter(id=id)
-    # Create bid form
-    form = bidform()
-    # Query listing creator's username
-    owner = User.objects.filter(id=item[0].ownerid)
-    # Check if the owner is also the currently logged in user
+
+    # Retrieve ID of currently logged in user
     user = request.user
     userid = user.id
+
+    # Create bid form and comment form
+    comment = commentform()
+    form = bidform()
+
+    # Populate comments table
+    commentquery = comments.objects.filter(listingid=id)
+    print(commentquery)
+
+    # Query listing creator's username
+    owner = User.objects.filter(id=item[0].ownerid)
+
     # Check if listing is currently active, if so display option to close listing
     if item[0].active == False:
-        archive = ""
-        pass
+        # Check if current user is the winner of auction
+        # If so, display that the auction is closed and no more bids are allowed
+        if userid == item[0].winnerid:
+            form = disabledbid()
+            return render(request, "auctions/closed.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'id': id, 'winner': "You are the winner! Your item will be mailed in 6-8 months", 'comment': comment, 'comments': commentquery})
+    
+    # Allow user to close their own listing
     else:
         if userid == item[0].ownerid:
             archive = "Click here to close listing"
         else:
             archive = ""
-    # Check if listing is on watchlist and change text appropiately 
+
+    # Check if listing is on watchlist and change text appropiately
+    # Allow user to add or remove item from a watchlist
     try:
         query=watchlist.objects.get(listingid = id, userid = userid)
         if query.active == True:
@@ -132,24 +149,25 @@ def display(request, id):
         # If newbid is higher than current bid, update value
         if newbid > currentbid:
             bidquery.initialvalue = request.POST["bidvalue"]
+            bidquery.winnerid = userid
             bidquery.save()
         # Otherwise, return an error
         else:     
             form = bidform()
-            return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'error': "Error: Please enter a bid greater than the current value", 'archive': archive})
+            return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'error': "Error: Please enter a bid greater than the current value", 'archive': archive, 'comment': comment, 'comments': commentquery})
 
         
         # Retrieve updated info for listing
         item = listing.objects.filter(id=id)      
         form = bidform()
-        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'archive': archive})
+        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'archive': archive, 'comment': comment, 'comments': commentquery})
 
     else:
         # Query table using listing ID
         item = listing.objects.filter(id=id)
         # Create bid form
         form = bidform()
-        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'archive': archive})
+        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'archive': archive, 'comment': comment, 'comments': commentquery})
 
 @login_required(login_url='login')
 def watch(request):
@@ -204,6 +222,36 @@ def close(request):
     # Redirect to previous page 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
+def comment(request):
+    # Take the Listing ID that watchlist was visited from
+    # https://stackoverflow.com/questions/27325505/django-getting-previous-url
+    page = str(request.META.get('HTTP_REFERER'))
+    # Split string to access only the ID
+    # https://www.kite.com/python/answers/how-to-remove-all-non-numeric-characters-from-a-string-in-python
+    listingid = page.rsplit("/", 1)[1]
+
+    # Retrieve comment input
+    comment = request.POST["comment"]
+
+    # Retrieve user ID
+    user = request.user
+    userid = user.id
+
+    # Retrieve username
+    query = User.objects.get(id=userid)
+    username = query.username
+    print(query)
+
+    # Retrieve current date and time
+    date = datetime.datetime.now()
+
+    # Insert into database
+    entry = comments(listingid=listingid, userid=userid, comment=comment, username=username)
+    entry.save()
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+
+
 
 
 
@@ -221,5 +269,9 @@ class bidform(forms.Form):
     bidvalue = forms.DecimalField(decimal_places=2, max_digits=9, label="Place a new bid", widget=forms.NumberInput(attrs={'class':'form-control'}))
 
 class commentform(forms.Form):
-    comment = forms.CharField(max_length=200)
+    comment = forms.CharField(max_length=600, widget=forms.Textarea(attrs={'class':'form-control', 'rows':6}))
+
+
+class disabledbid(forms.Form):
+    bidvalue = forms.DecimalField(decimal_places=2, max_digits=9, label="Bidding is now closed", widget=forms.NumberInput(attrs={'class':'form-control disabled'}))
 

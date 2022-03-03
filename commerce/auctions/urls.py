@@ -14,5 +14,7 @@ urlpatterns = [
     # Path for adding / removing to watchlist
     path("watch", views.watch, name="watch"),
     # Path for closing current listing
-    path("close", views.close, name="close")
+    path("close", views.close, name="close"),
+    # Path for adding a comment
+    path("comment", views.comment, name="comment")
 ]
