@@ -1,5 +1,28 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
+    <h2>
+        listing: {{item.listingname}}
+    </h2>
+    <div>
+        <img src="{{item.imgurl}}" height="250">
+    </div>
+    <div class="ltext">
+        {{item.description}} <br>
+        Current bid: ${{item.initialvalue}}
+    </div>
+    {% if user.is_authenticated %}
+        <form action="/" method="POST">
+            {% csrf_token %}
+            {{form}}
+            <button type="submit" class="btn btn-primary">submit</button> 
+        </form>
+        <a href="{% url 'watch' %}"> {{watch}}</a>
+    {% else %}
+    Sign in to place a bid!
+    {% endif %}
+    <div class="ltext">
+        Listed by: {{owner}}
+    </div>
 
 {% endblock %}

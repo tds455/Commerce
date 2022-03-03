@@ -1,3 +1,4 @@
+import http, re
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
@@ -8,7 +9,7 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
-from .models import User, listing, bids, comments
+from .models import User, listing, bids, comments, watchlist
 
 
 def index(request):
@@ -93,9 +94,65 @@ def create(request):
         return render(request, "auctions/create.html", {'form': form})
 
 def display(request, id):
-    return render(request, "auctions/display.html")
+    # Query table using listing ID
+    item = listing.objects.filter(id=id)
+    # Create bid form
+    form = bidform()
+    # Query listing creator's username
+    owner = User.objects.filter(id=item[0].ownerid)
+    
+    # Check if listing is on watchlist
+    user = request.user
+    userid = user.id
+    try:
+        query=watchlist.objects.get(listingid = id, userid = userid)
+        if query.active == True:
+            watch = "Remove from watchlist" 
+        else:
+            watch = "Add to watchlist" 
+    except:
+        pass
 
+    if request.method == "POST":
+        form = listingform()
+        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch})
 
+    else:
+        # Query table using listing ID
+        item = listing.objects.filter(id=id)
+        # Create bid form
+        form = bidform()
+        return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch})
+
+def watch(request):
+    # Take the Listing ID that watchlist was visited from
+    # https://stackoverflow.com/questions/27325505/django-getting-previous-url
+    page = str(request.META.get('HTTP_REFERER'))
+    # Split string to access only the ID
+    # https://www.kite.com/python/answers/how-to-remove-all-non-numeric-characters-from-a-string-in-python
+    listingid = page.rsplit("/", 1)[1]
+
+    # Get current user ID 
+    user = request.user
+    userid = user.id
+    # Check if User has a watchlist entry, if not create it.
+    try:
+        query=watchlist.objects.get(listingid = listingid, userid = userid)
+        if query.active == True:
+            query.active= "False"
+            query.save() 
+        else:
+            query.active= "True"
+            query.save()
+        print(query.active)
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    except:
+        entry = watchlist(listingid=listingid, userid=userid, active=True)
+        entry.save()
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+         
+    
 
 # Form classes
 
@@ -106,7 +163,8 @@ class listingform(forms.Form):
     imageurl = forms.URLField(widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}), required=False)
 
 class bidform(forms.Form):
-    bidvalue = forms.DecimalField(decimal_places=2, max_digits=9)
+    bidvalue = forms.DecimalField(decimal_places=2, max_digits=9, label="Place a new bid", widget=forms.NumberInput(attrs={'class':'form-control'}))
 
 class commentform(forms.Form):
     comment = forms.CharField(max_length=200)
+

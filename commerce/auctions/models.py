@@ -25,3 +25,7 @@ class comments(models.Model):
     date = models.DateTimeField
     comment = models.CharField(max_length=200)
 
+class watchlist(models.Model):
+    listingid = models.IntegerField()
+    userid = models.IntegerField()
+    active = models.BooleanField()

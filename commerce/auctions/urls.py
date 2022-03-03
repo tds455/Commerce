@@ -10,5 +10,7 @@ urlpatterns = [
     # Path for creating a new listing
     path("create", views.create, name="create"),
     # Path for viewing individual listings
-    path("<str:id>", views.display, name="display")
+    path("<int:id>", views.display, name="display"),
+    # Path for adding / removing to watchlist
+    path("watch", views.watch, name="watch")
 ]
