@@ -16,6 +16,7 @@ def index(request):
     activelistings = listing.objects.filter(active="True")
     return render(request, "auctions/index.html", {'listings': activelistings})
 
+@login_required(login_url='login')
 def watchlistfunc(request):
     # Get current user ID
     user = request.user
@@ -106,7 +107,7 @@ def create(request):
         # Commit values to database
         dbcommit = listing(listingname=name, initialvalue = value, description = desc, imgurl = img, ownerid = id, active = "True")
         dbcommit.save()
-        activelistings = listing.objects.all()
+        activelistings = listing.objects.filter(active="True")
         return render(request, "auctions/index.html", {'listings': activelistings})
     else:
         form = listingform()
@@ -172,10 +173,13 @@ def display(request, id):
             form = bidform()
             return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'error': "Error: Please enter a bid greater than the current value", 'archive': archive, 'comment': comment, 'comments': commentquery})
 
-        
         # Retrieve updated info for listing
         item = listing.objects.filter(id=id)      
         form = bidform()
+
+        # Add bid to table
+        entry = bids(listingid=id, userid=userid, value=newbid)
+        entry.save()
         return render(request, "auctions/display.html", {'item': item[0], 'form': form, 'owner': owner[0].username, 'watch': watch, 'id': id, 'archive': archive, 'comment': comment, 'comments': commentquery})
 
     else:
@@ -239,8 +243,10 @@ def close(request):
     query.save()
 
     # Redirect to previous page 
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    activelistings = listing.objects.filter(active="True")
+    return render(request, "auctions/index.html", {'listings': activelistings})
 
+@login_required(login_url='login')
 def comment(request):
     # Take the Listing ID that watchlist was visited from
     # https://stackoverflow.com/questions/27325505/django-getting-previous-url
