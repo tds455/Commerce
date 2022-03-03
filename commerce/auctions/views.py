@@ -92,6 +92,8 @@ def create(request):
         form = listingform()
         return render(request, "auctions/create.html", {'form': form})
 
+def display(request, id):
+    return render(request, "auctions/display.html")
 
 
 
