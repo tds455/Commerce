@@ -30,5 +30,5 @@ class comments(models.Model):
 
 class watchlist(models.Model):
     listingid = models.IntegerField()
-    userid = models.IntegerField()
+    watcherid = models.IntegerField()
     active = models.BooleanField()

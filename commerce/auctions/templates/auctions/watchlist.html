@@ -1,0 +1,25 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Watchlist</h2>
+    <table class="table">
+        <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Name</th>
+              <th scope="col">Current bid</th>
+              <th scope="col">Description</th>
+              <th scope="col">Photo</th>
+            </tr>
+          </thead>
+    {% for listing in listings %}
+    <tr>
+    <th scope="row">{{listing.id}}</th>
+    <td><a href="/{{listing.id}}">{{listing.listingname}} </a></a></td>
+    <td>${{listing.initialvalue}}</td>
+    <td>{{listing.description}}</td>
+    <td><img src="{{listing.imgurl}}" width="80" height="80"></td>
+    </tr>
+    {% endfor %}
+    </table>
+{% endblock %}

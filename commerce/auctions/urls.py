@@ -16,5 +16,7 @@ urlpatterns = [
     # Path for closing current listing
     path("close", views.close, name="close"),
     # Path for adding a comment
-    path("comment", views.comment, name="comment")
+    path("comment", views.comment, name="comment"),
+    # Path for viewing watchlist
+    path("watchlist", views.watchlistfunc, name="watchlist")
 ]

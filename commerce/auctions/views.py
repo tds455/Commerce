@@ -16,6 +16,25 @@ def index(request):
     activelistings = listing.objects.filter(active="True")
     return render(request, "auctions/index.html", {'listings': activelistings})
 
+def watchlistfunc(request):
+    # Get current user ID
+    user = request.user
+    id = user.id
+
+    # Initialise list
+    activelistings = []
+
+    # Retrieve user's list of watchlist items
+    list = watchlist.objects.filter(watcherid=id)
+
+    # Refrence this against all listings and append to list
+    for item in list:
+        query = listing.objects.get(pk=item.listingid)
+        activelistings.append(query)
+
+    # Return to user
+    return render(request, "auctions/watchlist.html", {'listings': activelistings})
+
 
 def login_view(request):
     if request.method == "POST":
@@ -83,8 +102,7 @@ def create(request):
         # Retrieve user's current ID
         user = request.user
         id = user.id
-        print(id)
-        
+
         # Commit values to database
         dbcommit = listing(listingname=name, initialvalue = value, description = desc, imgurl = img, ownerid = id, active = "True")
         dbcommit.save()
@@ -109,7 +127,6 @@ def display(request, id):
 
     # Populate comments table
     commentquery = comments.objects.filter(listingid=id)
-    print(commentquery)
 
     # Query listing creator's username
     owner = User.objects.filter(id=item[0].ownerid)
@@ -131,15 +148,14 @@ def display(request, id):
 
     # Check if listing is on watchlist and change text appropiately
     # Allow user to add or remove item from a watchlist
-    try:
-        query=watchlist.objects.get(listingid = id, userid = userid)
-        if query.active == True:
-            watch = "Remove from watchlist" 
-        else:
-            watch = "Add to watchlist" 
-    except:
+     
+    query=watchlist.objects.filter(listingid = id, watcherid = userid)
+    if len(query) == 0:
         watch = "Add to watchlist"
-
+    else:
+        watch = "Remove from watchlist"
+         
+        
     # If bid is submitted, validate response and update bid value.
     if request.method == "POST":
         newbid = float(request.POST["bidvalue"])
@@ -181,23 +197,26 @@ def watch(request):
     # Get current user ID 
     user = request.user
     userid = user.id
+
+    query = None
     # Check if User has a watchlist entry, if not create it.
-    # If the user has a watchlist entry for this listing, toggle the boolean value
+    # If the user has a watchlist entry for this listing, delete it
     # Then return user to previous page
     try:
-        query=watchlist.objects.get(listingid = listingid, userid = userid)
-        if query.active == True:
-            query.active= "False"
-            query.save() 
-        else:
-            query.active= "True"
-            query.save()
-        print(query.active)
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        query=watchlist.objects.get(listingid = listingid, watcherid = userid)
     except:
-        entry = watchlist(listingid=listingid, userid=userid, active=True)
+        entry = watchlist(listingid=listingid, watcherid=userid, active=True)
+        print(query)
+        print("except")
         entry.save()
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    else:
+        print(query)
+        print("found")
+        watchlist.objects.filter(listingid = listingid, watcherid = userid).delete()
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+    
 
 @login_required(login_url='login')
 def close(request):
@@ -240,10 +259,6 @@ def comment(request):
     # Retrieve username
     query = User.objects.get(id=userid)
     username = query.username
-    print(query)
-
-    # Retrieve current date and time
-    date = datetime.datetime.now()
 
     # Insert into database
     entry = comments(listingid=listingid, userid=userid, comment=comment, username=username)
