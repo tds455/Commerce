@@ -30,4 +30,27 @@
         Listed by: {{owner}}
     </div>
 
+    {% if user.is_authenticated %}
+    <form action="{% url 'comment' %}" method="POST">
+        {% csrf_token %}
+        {{comment}}
+        <button type="submit" class="btn btn-info">submit</button>
+    </form>
+    
+    {% endif %}
+
+    <table class="table">
+        <thead>
+            <tr>
+              <th scope="col">Comment</th>
+            </tr>
+          </thead>
+    {% for comment in comments %}
+    <tr>
+    <th scope="row">{{comment.username}}</th>
+    <td>{{comment.comment}}</td>
+    </tr>
+    {% endfor %}
+    </table>
+
 {% endblock %}
