@@ -18,5 +18,9 @@ urlpatterns = [
     # Path for adding a comment
     path("comment", views.comment, name="comment"),
     # Path for viewing watchlist
-    path("watchlist", views.watchlistfunc, name="watchlist")
+    path("watchlist", views.watchlistfunc, name="watchlist"),
+    # Path for selecting a catagory 
+    path("categories", views.categories, name="categories"),
+    # Path for viewing a specific category
+    path("<str:cat>", views.catview, name="catview")
 ]

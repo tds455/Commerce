@@ -9,12 +9,20 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
-from .models import User, listing, bids, comments, watchlist
+from .models import User, listing, bids, comments, watchlist, CATS
 
 
 def index(request):
     activelistings = listing.objects.filter(active="True")
     return render(request, "auctions/index.html", {'listings': activelistings})
+
+def categories(request):
+    return render(request, "auctions/categories.html", {'cats': CATS})
+
+def catview(request, cat):
+    listing2 = listing.objects.filter(category=cat)
+    return render(request, "auctions/catview.html", {'listings': listing2, 'cat': cat})
+
 
 @login_required(login_url='login')
 def watchlistfunc(request):
@@ -95,17 +103,19 @@ def create(request):
         name = request.POST["listingname"]
         value = request.POST["initialvalue"]
         desc = request.POST["description"]
+        cat = request.POST["category"]
         if not request.POST["imageurl"]:
             img = "/static/auctions/noimg.png"
         else:
             img = request.POST["imageurl"]
+        
 
         # Retrieve user's current ID
         user = request.user
         id = user.id
 
         # Commit values to database
-        dbcommit = listing(listingname=name, initialvalue = value, description = desc, imgurl = img, ownerid = id, active = "True")
+        dbcommit = listing(listingname=name, initialvalue = value, description = desc, imgurl = img, ownerid = id, active = "True", category = cat)
         dbcommit.save()
         activelistings = listing.objects.filter(active="True")
         return render(request, "auctions/index.html", {'listings': activelistings})
@@ -285,6 +295,7 @@ class listingform(forms.Form):
     initialvalue = forms.DecimalField(label='initial price', decimal_places=2, max_digits=4000000, widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}))
     description = forms.CharField(max_length=200, widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}))
     imageurl = forms.URLField(widget=forms.Textarea(attrs={'class':'form-control', 'rows':1}), required=False)
+    category = forms.ChoiceField(choices=CATS, widget=forms.Select(attrs={'class':'form-control'}))
 
 class bidform(forms.Form):
     bidvalue = forms.DecimalField(decimal_places=2, max_digits=9, label="Place a new bid", widget=forms.NumberInput(attrs={'class':'form-control'}))

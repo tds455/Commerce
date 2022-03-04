@@ -1,7 +1,16 @@
+from unicodedata import category
 from unittest.util import _MAX_LENGTH
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+
+CATS = (
+    ('Toys', 'Toys'),
+    ('Animals', 'Animals'),
+    ('Furniture', 'Furniture'),
+    ('Food', 'Food'),
+    ('Other', 'Other'),
+)
 
 class User(AbstractUser):
     pass
@@ -14,6 +23,7 @@ class listing(models.Model):
     description = models.CharField(max_length=200)
     imgurl = models.URLField()
     active = models.BooleanField()
+    category = models.CharField(choices=CATS, default='Toys', max_length=9)
 
 class bids(models.Model):
     listingid = models.IntegerField()
