@@ -136,6 +136,8 @@ def display(request, id):
     comment = commentform()
     form = bidform()
 
+    archive = ""
+
     # Populate comments table
     commentquery = comments.objects.filter(listingid=id)
 
@@ -154,8 +156,7 @@ def display(request, id):
     else:
         if userid == item[0].ownerid:
             archive = "Click here to close listing"
-        else:
-            archive = ""
+
 
     # Check if listing is on watchlist and change text appropiately
     # Allow user to add or remove item from a watchlist
@@ -241,9 +242,10 @@ def close(request):
     # https://www.kite.com/python/answers/how-to-remove-all-non-numeric-characters-from-a-string-in-python
     listingid = page.rsplit("/", 1)[1]
 
-    # Get current user ID 
+    # Get current user ID and match to User model to find username
     user = request.user
     userid = user.id
+    owner = User.objects.get(id=userid)
 
     # Query the current listing
     query = listing.objects.get(id = listingid, ownerid = userid)
@@ -252,9 +254,15 @@ def close(request):
     query.active = "False"
     query.save()
 
-    # Redirect to previous page 
-    activelistings = listing.objects.filter(active="True")
-    return render(request, "auctions/index.html", {'listings': activelistings})
+    # Get comments for item
+    commentquery = comments.objects.filter(listingid=listingid)
+    comment = commentform()
+
+    # Query table using listing ID
+    item = listing.objects.get(id=listingid)
+    # Create disabled bid form
+    form = disabledbid()
+    return render(request, "auctions/closed.html", {'item': item, 'form': form, 'owner': owner, 'watch': watch, 'id': id, 'comment': comment, 'comments': commentquery, 'winner': "You are the winner! Your item will be mailed in 6-8 months"})
 
 @login_required(login_url='login')
 def comment(request):
