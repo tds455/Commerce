@@ -7,9 +7,9 @@ Commerce is an e-commerce site built with Django to match the specification of [
 
         virtualenv env
 
-- Install requirements
+- Install Django
 
-        pip install -r requirements.txt
+        pip install django
 
 - Start Django server
 
